@@ -261,6 +261,7 @@ background-color: rgba(22, 22, 22, 0);
             background-image: url('im/fairport_land_spring.png');
             background-size:100%;
             background-repeat: no-repeat;
-  background-attachment: fixed;}
+            background-attachment: fixed;
+        }
 
   
