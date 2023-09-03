@@ -1,131 +1,461 @@
-
 <!DOCTYPE html>
-<html>
-    <head>
- <!-- fabricon and tab name  --> 
-        <link rel="icon" href="im/fairportConvention_logo2018.png" sizes="48x48">
-    <title>Fairportconvention</title>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="im/p2.png" sizes="48x48">
+    <title>Game of tag</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
 
-    <link rel="stylesheet" href="web.css.css">
+        #game-container {
+            width: 80vw;
+            height: 100vh;
+            background-color: rgb(18, 116, 18);
+            position: relative;
+            float: left;
+            transition: background-color .7s ,coler .5s ;
 
-    </head>
+        }
 
-    <body >
- <!-- Buttons to other pages --> 
-        <div class="bur">
-        
-<div class="log">
-    <img src="im/fairportConvention_logo2018.png"width="200" height="150" 
-               style="border-radius: 20px;"></div>
+        #player {
+            width: 30px;
+            height: 30px;
+            background-color: rgb(19, 67, 156);
+            position: absolute;
+        }
 
-<div class="tit">
-<a href="Home.html">
-<button class="cw">
-   <p style=" color: #ffffff;
-   font-size: 27px;
-   font-weight: bold;
-   "> Home</p></button></a></div>
+        .enemy {
+            width: 30px;
+            height: 30px;
+            background-color: rgb(207, 9, 9);
+            position: absolute;
+        }
 
-<div class="tit">Locations</div>
+        .pink-enemy {
+            width: 30px;
+            height: 30px;
+            background-color: rgb(255, 115, 139); /* Pink color */
+            position: absolute;
+        }
 
-            <div style="height: 100%; margin-right: 4px;">   
-            
-        <a href="History.html"><button 
-                class="cw"><p class="ct">History</p></button></a></div>
+        #play-again {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 40%;
+            font-size: 30px;
+            transform: translate(-50%, -50%);
+            height: 100px;
+            width: 180px;
+            border-radius: 10px;
+            background-color: #0241ca;
+        }
 
-                <div class="drop">
-            <button class="cw2"><p class="ct">Shop and contacts </p></button>   
-             <div class="dropdown-content">
-                      <a href="Shop.html">Shop</a>
-                      <a href="Contact us.html">Contact us</a>
-                      <a href="newsletter.html">Newsletter</a>
-                      </div>
-             </div> 
-             
-             <div class="drop">
-                <button class="cw2"><p class="ct">Festival's </p></button>   
-                 <div class="dropdown-content">
-                          <a href="Tickets sales.html">Tickets sales</a>
-                          <a href="Locations.html">Locations</a>
-                          <a href="Festival's.html">Festival's</a></div>
-                 </div> 
+        #timer {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            color: white;
+        }
 
-</div>
+        #sidebar {
+            width: 20vw;
+            height: 100vh;
+            background-color: #333;
+            color: white;
+            position: relative;
+            float: left;
+        }
+
+        #high-scores {
+            font-size: 19px;
+            padding: 20px;
+            color: #fafafa;
+            font-family: 'Trebuchet MS', sans-serif;
+        }
+
+        #name-input {
+            font-size: 20px;
+            padding: 5px;
+            margin-left: 20px;
+            margin-top: 20px;
+        }
+
+        #name-display {
+            font-size: 18px;
+            font-family: 'Trebuchet MS', sans-serif;
+            padding: 10px;
+            margin-left: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="player"></div>
+    </div>
+    <button id="play-again">Play Again</button>
+    <div id="timer">Survival Time: 0 seconds</div>
+
+    <div id="sidebar">
+        <div id="high-scores">High Scores:<br></div>
+        <input id="name-input" type="text" placeholder="Enter your name">
+        <div id="name-display"></div>
+    </div>
+
+    <script>
+        const player = document.getElementById("player");
+        const gameContainer = document.getElementById("game-container");
+        const playAgainButton = document.getElementById("play-again");
+        const timerDisplay = document.getElementById("timer");
+        const highScoreDisplay = document.getElementById("high-scores");
+        const nameInput = document.getElementById("name-input");
+        const nameDisplay = document.getElementById("name-display");
+
+        let playerX = gameContainer.clientWidth / 2 - player.clientWidth / 2;
+        let playerY = gameContainer.clientHeight / 2 - player.clientHeight / 2;
+
+        player.style.left = playerX + "px";
+        player.style.top = playerY + "px";
+
+        let enemies = [];
+        let gameRunning = false; // Start the game as not running
+        let survivalTime = 0;
+        let timerInterval;
+        let isVisible = true;
+        let redSquareCount = 0; // Counter for red squares
+        let pinkSquarePercentage = 2; // Percentage of pink squares among red squares (starts at 5%)
+
+        // Load high scores from localStorage
+        let highScores = JSON.parse(localStorage.getItem("highScores")) || [];
+        displayHighScores();
+
+        // Load the last entered name from localStorage
+        let lastEnteredName = localStorage.getItem("lastEnteredName");
+        if (lastEnteredName) {
+            nameInput.value = lastEnteredName;
+            updateNameDisplay(lastEnteredName);
+        }
+
+        function createEnemy() {
+            if (gameRunning) { // Only create enemies when the game is running
+                const enemy = document.createElement("div");
+                enemy.className = "enemy";
+                redSquareCount++; // Increment the counter for red squares
+
+                if (redSquareCount >= 110 && Math.random() * 20 <= pinkSquarePercentage) {
+                    enemy.className = "pink-enemy";
+                }
+
+                let enemyX, enemyY;
+                do {
+                    enemyX = Math.random() * (gameContainer.clientWidth - enemy.clientWidth);
+                    enemyY = Math.random() * (gameContainer.clientHeight - enemy.clientHeight);
+                } while (distanceBetween(playerX, playerY, enemyX, enemyY) < 100);
+
+                enemy.style.left = enemyX + "px";
+                enemy.style.top = enemyY + "px";
+                gameContainer.appendChild(enemy);
+                enemies.push(enemy);
+
+                moveEnemy(enemy, enemy.className === "pink-enemy" ? 2 : 1); // Pink squares move at twice the speed
+            }
+        }
+
+        function distanceBetween(x1, y1, x2, y2) {
+            const dx = x1 - x2;
+            const dy = y1 - y2;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
 
 
 
-      <!--Hey is a box for the elements to go in -->   
-      <div class="man-box">
 
 
-        <table style="background-color: rgba(55, 180, 118);
-        height: 100%; width: 850px;
-        ">
-            <tr>
-              <th>bamd</th>
-              <th>time and dat</th>
-              <th>Locations</th>
-            </tr>
-            <tr>
-              <td>Fairport convention</td>
-              <td>29 of August 2023 at 2:00PM</td>
-              <td>
-                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2461.693980229557!2d-2.109125122877877!3d51.90304853172266!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48711b6ebe2b3c75%3A0x6dc5cdbd30bdf4e6!2sKing%20George%20V%20Playing%20Field%2C%20Cheltenham!5e0!3m2!1sen!2suk!4v1686744643967!5m2!1sen!2suk"
-                width="400" height="280" style="border:04;"  loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-              </td>
-            </tr>
-            <tr>
-              <td style="width: 220px;" >Fairport convention</td>
-              <td style="width: 300px;"
-              >12 of August 2023 at 4:00PM</td>
-              <td>
-                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2437.1483892020156!2d-2.0180860465074986!3d51.9207393808713!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48711f8656e1dce1%3A0xbdb6206f9ea689ed!2sPrestbury%20Hill%20Butterfly%20Reserve!5e0!3m2!1sen!2suk!4v1686757782824!5m2!1sen!2suk" 
-                width="400" height="300" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-            </td>
-            </tr>
-            
-                <tr>
-                    <td>Fairport convention</td>
-                    <td>10 of August 2023 at 2:00PM</td>
-                    <td>
-                      <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2461.693980229557!2d-2.109125122877877!3d51.90304853172266!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48711b6ebe2b3c75%3A0x6dc5cdbd30bdf4e6!2sKing%20George%20V%20Playing%20Field%2C%20Cheltenham!5e0!3m2!1sen!2suk!4v1686744643967!5m2!1sen!2suk"
-                      width="400" height="280" style="border:04;"  loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-                    </td>
-                  </tr>
-                 
+        // Add event listeners for arrow key controls for the blue square
+        window.addEventListener("keydown", function(event) {
+            if (gameRunning) {
+                const speed = 10;
+                switch (event.key) {
+                    case "ArrowUp":
+                        playerY -= speed;
+                        break;
+                    case "ArrowDown":
+                        playerY += speed;
+                        break;
+                    case "ArrowLeft":
+                        playerX -= speed;
+                        break;
+                    case "ArrowRight":
+                        playerX += speed;
+                        break;
+                }
 
-                  <tr>
-                    <td>Fairport convention</td>
-                    <td>3 of August 2023 at 3:00PM</td>
-                    <td>
-                      <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2461.693980229557!2d-2.109125122877877!3d51.90304853172266!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48711b6ebe2b3c75%3A0x6dc5cdbd30bdf4e6!2sKing%20George%20V%20Playing%20Field%2C%20Cheltenham!5e0!3m2!1sen!2suk!4v1686744643967!5m2!1sen!2suk"
-                      width="400" height="280" style="border:04;"  loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-                    </td>
-                  </tr>
-                 
-          </table>
-          
+                // Ensure the player stays within the game container
+                playerX = Math.max(0, Math.min(playerX, gameContainer.clientWidth - player.clientWidth));
+                playerY = Math.max(0, Math.min(playerY, gameContainer.clientHeight - player.clientHeight));
 
-
-        <!--Free textbooks -->   
-        <div class="mb">
-            Fairport Convention are an English folk rock band, formed in 1967 by guitarists Richard Thompson and Simon Nicol, bassist Ashley Hutchings and drummer Shaun Frater
-            (with Frater replaced by Martin Lamble after their first gig.)
-        </div>
-
-    </div> 
+                player.style.left = playerX + "px";
+                player.style.top = playerY + "px";
+            }
+        });
 
 
 
 
 
+        function movePlayer(event) {
+            if (gameRunning) {
+                const speed = 10;
+                const key = event.key.toLowerCase();
+                switch (key) {
+                    case "w":
+                    
+                        playerY -= speed;
+                        break;
+                    case "s":
+                   
+                        playerY += speed;
+                        break;
+                    case "a":
+                    
+                        playerX -= speed;
+                        break;
+                    case "d":
+                   
+                        playerX += speed;
+                        break;
+                }
 
- <!-- Bottom grey bar --> 
-<div class="bb">
-             </div>
+                // Ensure the player stays within the game container
+                playerX = Math.max(0, Math.min(playerX, gameContainer.clientWidth - player.clientWidth));
+                playerY = Math.max(0, Math.min(playerY, gameContainer.clientHeight - player.clientHeight));
+
+                player.style.left = playerX + "px";
+                player.style.top = playerY + "px";
+            }
+        }
+
+        function moveEnemy(enemy, speedMultiplier) {
+            if (gameRunning) {
+                const enemyRect = enemy.getBoundingClientRect();
+                const enemyX = enemyRect.left + enemyRect.width / 2;
+                const enemyY = enemyRect.top + enemyRect.height / 2;
+
+                const targetX = playerX + player.clientWidth / 2;
+                const targetY = playerY + player.clientHeight / 2;
+
+                const angle = Math.atan2(targetY - enemyY, targetX - enemyX);
+                const speed = 1 * speedMultiplier; // Adjust the speed as needed
+
+                const velocityX = Math.cos(angle) * speed;
+                const velocityY = Math.sin(angle) * speed;
+
+                let newX = enemyRect.left + velocityX;
+                let newY = enemyRect.top + velocityY;
+
+                // Check for collisions with the player
+                const playerRect = player.getBoundingClientRect();
+                if (
+                    newX < playerRect.right &&
+                    newX + enemyRect.width > playerRect.left &&
+                    newY < playerRect.bottom &&
+                    newY + enemyRect.height > playerRect.top
+                ) {
+                    gameOver();
+                    return;
+                }
+
+                // Check for collisions with the green walls and adjust the position accordingly
+                if (newX < 0 || newX + enemyRect.width > gameContainer.clientWidth || newY < 0 || newY + enemyRect.height > gameContainer.clientHeight) {
+                    newX = enemyRect.left;
+                    newY = enemyRect.top;
+                }
+
+                enemy.style.left = newX + "px";
+                enemy.style.top = newY + "px";
+
+                requestAnimationFrame(() => moveEnemy(enemy, speedMultiplier));
+            }
+        }
 
 
 
-    </body>
-    </html>
+    // Add event listeners for arrow key controls for the blue square
+    window.addEventListener("keydown", function(event) {
+        if (gameRunning) {
+            const speed = 10;
+            switch (event.key) {
+                case "ArrowUp":
+                    blueSquareY -= speed;
+                    break;
+                case "ArrowDown":
+                    blueSquareY += speed;
+                    break;
+                case "ArrowLeft":
+                    blueSquareX -= speed;
+                    break;
+                case "ArrowRight":
+                    blueSquareX += speed;
+                    break;
+            }
 
+            // Ensure the blue square stays within the game container
+            blueSquareX = Math.max(0, Math.min(blueSquareX, gameContainer.clientWidth - blueSquare.clientWidth));
+            blueSquareY = Math.max(0, Math.min(blueSquareY, gameContainer.clientHeight - blueSquare.clientHeight));
+
+            blueSquare.style.left = blueSquareX + "px";
+            blueSquare.style.top = blueSquareY + "px";
+        }
+    });
+
+    // Add touch event listeners for touch screen controls on mobile devices
+    let touchStartX, touchStartY;
+
+    gameContainer.addEventListener("touchstart", function(event) {
+        if (gameRunning) {
+            touchStartX = event.touches[0].clientX;
+            touchStartY = event.touches[0].clientY;
+        }
+    });
+
+    gameContainer.addEventListener("touchmove", function(event) {
+        event.preventDefault(); // Prevent scrolling while dragging
+        if (gameRunning) {
+            const touchX = event.touches[0].clientX;
+            const touchY = event.touches[0].clientY;
+
+            // Calculate the change in position
+            const deltaX = touchX - touchStartX;
+            const deltaY = touchY - touchStartY;
+
+            // Adjust the player's position based on touch movement
+            blueSquareX += deltaX;
+            blueSquareY += deltaY;
+
+            // Ensure the blue square stays within the game container
+            blueSquareX = Math.max(0, Math.min(blueSquareX, gameContainer.clientWidth - blueSquare.clientWidth));
+            blueSquareY = Math.max(0, Math.min(blueSquareY, gameContainer.clientHeight - blueSquare.clientHeight));
+
+            blueSquare.style.left = blueSquareX + "px";
+            blueSquare.style.top = blueSquareY + "px";
+
+            // Update the start position for the next move event
+            touchStartX = touchX;
+            touchStartY = touchY;
+        }
+    });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function updateTimer() {
+            if (gameRunning) {
+                survivalTime += 0.01; // Increase the timer by 0.01 seconds (10 milliseconds)
+                timerDisplay.textContent = `Survival Time: ${survivalTime.toFixed(2)} seconds`;
+            }
+        }
+
+        function displayHighScores() {
+            highScores.sort((a, b) => b.score - a.score);
+            highScoreDisplay.innerHTML = "High Scores:<br>";
+            highScores.slice(0, 5).forEach((entry, index) => {
+                highScoreDisplay.innerHTML += `${index + 1}. ${entry.name}: ${entry.score.toFixed(2)} seconds<br>`;
+            });
+        }
+
+        function updateNameDisplay(name) {
+            nameDisplay.textContent = `Name: ${name}`;
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            clearInterval(timerInterval);
+            playAgainButton.style.display = "block";
+            isVisible = false;
+            redSquareCount = 0; // Reset red square count
+            pinkSquarePercentage = 5; // Reset pink square percentage
+
+            // Update high scores
+            if (survivalTime > 0) {
+                const name = nameInput.value || "Anonymous";
+                highScores.push({ name, score: survivalTime });
+                localStorage.setItem("highScores", JSON.stringify(highScores));
+                displayHighScores();
+            }
+
+            playAgainButton.addEventListener("click", resetGame);
+        }
+
+        function resetGame() {
+            playAgainButton.style.display = "none";
+            playerX = gameContainer.clientWidth / 2 - player.clientWidth / 2;
+            playerY = gameContainer.clientHeight / 2 - player.clientHeight / 2;
+            player.style.left = playerX + "px";
+            player.style.top = playerY + "px";
+
+            // Remove all enemies
+            for (let i = 0; i < enemies.length; i++) {
+                gameContainer.removeChild(enemies[i]);
+            }
+            enemies = [];
+
+            survivalTime = 0;
+            timerDisplay.textContent = "Survival Time: 0.00 seconds";
+
+            gameRunning = true;
+            isVisible = true;
+            timerInterval = setInterval(updateTimer, 10); // Update the timer every 10 milliseconds for millisecond precision
+        }
+
+        function startGame() {
+            resetGame(); // Start the game as soon as the page loads
+            setInterval(createEnemy, 1000); // Spawn enemies every 1 second (frequent spawning)
+            setInterval(increasePinkSquarePercentage, 5000); // Increase pink square percentage every 5 seconds
+        }
+
+        function increasePinkSquarePercentage() {
+            if (gameRunning) {
+                pinkSquarePercentage += 5; // Increase pink square percentage by 5%
+            }
+        }
+
+        window.addEventListener("keydown", movePlayer);
+        startGame();
+
+        // Function to handle tab visibility change
+        document.addEventListener("visibilitychange", function () {
+            if (document.hidden) {
+                // Tab is hidden, pause the game
+                clearInterval(timerInterval);
+                gameRunning = false;
+            } else if (isVisible) {
+                // Tab is visible and game is not already running, restart the game
+                resetGame();
+            }
+        });
+
+        // Function to handle input name change
+        nameInput.addEventListener("input", function () {
+            const name = nameInput.value;
+            updateNameDisplay(name);
+            localStorage.setItem("lastEnteredName", name);
+        });
+    </script>
+</body>
+</html>
