@@ -285,55 +285,57 @@
 
 
 
-    // Add event listeners for arrow key controls for the blue square
-    window.addEventListener("keydown", function(event) {
-        if (gameRunning) {
-            const speed = 10;
-            switch (event.key) {
-                case "ArrowUp":
-                    blueSquareY -= speed;
-                    break;
-                case "ArrowDown":
-                    blueSquareY += speed;
-                    break;
-                case "ArrowLeft":
-                    blueSquareX -= speed;
-                    break;
-                case "ArrowRight":
-                    blueSquareX += speed;
-                    break;
-            }
 
-            // Ensure the blue square stays within the game container
-            blueSquareX = Math.max(0, Math.min(blueSquareX, gameContainer.clientWidth - blueSquare.clientWidth));
-            blueSquareY = Math.max(0, Math.min(blueSquareY, gameContainer.clientHeight - blueSquare.clientHeight));
 
-            blueSquare.style.left = blueSquareX + "px";
-            blueSquare.style.top = blueSquareY + "px";
-        }
-    });
 
-    // Add touch event listeners for touch screen controls on mobile devices
-    let touchStartX, touchStartY;
 
-    gameContainer.addEventListener("touchstart", function(event) {
-        if (gameRunning) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        const blueSquare = document.getElementById("blue-square");
+        let blueSquareX = gameContainer.clientWidth / 2 - blueSquare.clientWidth / 2;
+        let blueSquareY = gameContainer.clientHeight / 2 - blueSquare.clientHeight / 2;
+        blueSquare.style.left = blueSquareX + "px";
+        blueSquare.style.top = blueSquareY + "px";
+
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isTouching = false;
+
+        // Touch event handlers for controlling the blue square
+        gameContainer.addEventListener("touchstart", function(event) {
             touchStartX = event.touches[0].clientX;
             touchStartY = event.touches[0].clientY;
-        }
-    });
+            isTouching = true;
+        });
 
-    gameContainer.addEventListener("touchmove", function(event) {
-        event.preventDefault(); // Prevent scrolling while dragging
-        if (gameRunning) {
-            const touchX = event.touches[0].clientX;
-            const touchY = event.touches[0].clientY;
+        gameContainer.addEventListener("touchmove", function(event) {
+            if (!isTouching) return;
+            event.preventDefault(); // Prevent scrolling while dragging
 
-            // Calculate the change in position
-            const deltaX = touchX - touchStartX;
-            const deltaY = touchY - touchStartY;
+            const touchEndX = event.touches[0].clientX;
+            const touchEndY = event.touches[0].clientY;
 
-            // Adjust the player's position based on touch movement
+            const deltaX = touchEndX - touchStartX;
+            const deltaY = touchEndY - touchStartY;
+
             blueSquareX += deltaX;
             blueSquareY += deltaY;
 
@@ -344,11 +346,19 @@
             blueSquare.style.left = blueSquareX + "px";
             blueSquare.style.top = blueSquareY + "px";
 
-            // Update the start position for the next move event
-            touchStartX = touchX;
-            touchStartY = touchY;
-        }
-    });
+            touchStartX = touchEndX;
+            touchStartY = touchEndY;
+        });
+
+        gameContainer.addEventListener("touchend", function() {
+            isTouching = false;
+        });
+
+
+
+
+
+        
 
 
 
@@ -358,11 +368,7 @@
 
 
 
-
-
-
-
-
+        
 
         function updateTimer() {
             if (gameRunning) {
