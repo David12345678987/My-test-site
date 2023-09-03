@@ -117,10 +117,11 @@
     </div>
 
     <div id="controls" style="margin-right: 82%; margin-bottom: 5%;">
-        <button id="up-button" class="control-button">Up</button><br>
-        <button id="left-button" class="control-button">Left</button>
-        <button id="right-button" class="control-button">Right</button><br>
-        <button id="down-button" class="control-button">Down</button>
+        <button id="up-button" class="control-button" style="background-color: #0241ca; margin-left: 70px;">Up</button><br>
+        <button id="left-button" class="control-button" style="background-color: #0241ca;">Left</button>
+        <button id="down-button" class="control-button" style="background-color: #0241ca;">Down</button>
+        <button id="right-button" class="control-button" style="background-color: #0241ca;">Right</button><br>
+        
     </div>
 
     <script>
@@ -188,34 +189,6 @@
             const dy = y1 - y2;
             return Math.sqrt(dx * dx + dy * dy);
         }
-
-        // Add event listeners for arrow key controls for the blue square
-        window.addEventListener("keydown", function(event) {
-            if (gameRunning) {
-                const speed = 10;
-                switch (event.key) {
-                    case "ArrowUp":
-                        playerY -= speed;
-                        break;
-                    case "ArrowDown":
-                        playerY += speed;
-                        break;
-                    case "ArrowLeft":
-                        playerX -= speed;
-                        break;
-                    case "ArrowRight":
-                        playerX += speed;
-                        break;
-                }
-
-                // Ensure the player stays within the game container
-                playerX = Math.max(0, Math.min(playerX, gameContainer.clientWidth - player.clientWidth));
-                playerY = Math.max(0, Math.min(playerY, gameContainer.clientHeight - player.clientHeight));
-
-                player.style.left = playerX + "px";
-                player.style.top = playerY + "px";
-            }
-        });
 
         // Function to continuously move the blue square in the specified direction
         function moveBlueSquare(directionX, directionY) {
